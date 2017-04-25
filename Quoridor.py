@@ -12,6 +12,14 @@ class QuoridorGame():
 
         self.clock=pygame.time.Clock()
 
+        # Walls: 0 means no wall, 1 means vertical wall,
+        #        2 means horizontal wall
+
+        self.walls = [[0 for x in range(8)] for y in range(8)]
+
+        self.walls[0][2]=2
+        self.walls[7][2]=2
+
         # load the images
         self.initGraphics()
 
@@ -19,6 +27,15 @@ class QuoridorGame():
         # This is under construction
         # Put the board
         self.screen.blit(self.board, [0,0])
+
+        for x in range(8):
+            for y in range(8):
+                if self.walls[y][x]!=0:
+                    # If there is a vertical wall
+                    if self.walls[y][x]==1:
+                        self.screen.blit(self.wall_v, [60*x+61,60*y+6])
+                    else:
+                        self.screen.blit(self.wall_h, [60*x+6,60*y+61])
 
 
     def initGraphics(self):
