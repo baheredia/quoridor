@@ -20,7 +20,7 @@ class QuoridorGame():
         self.players = [(4,8),(4,0)]
 
         # Number of walls remaining
-        self.num_walls = 10
+        self.num_walls = 100
 
         # Option: 0 move, 1 place vertical wall, 2 place horizontal wall
         self.selection = 0
@@ -79,9 +79,10 @@ class QuoridorGame():
         self.drawBoard()
         self.drawSide()
 
+         
         mouse = pygame.mouse.get_pos()
 
-        mouse_on_board = mouse[0] <= 542
+        mouse_on_board = (mouse[0] <= 542) and (mouse[0] > 5) and (mouse[1] > 5) and (mouse[1] <= 542)
 
         # Hovering effect if mouse is on board
         if mouse_on_board:
@@ -89,7 +90,7 @@ class QuoridorGame():
             if self.selection==0:
                 xpos = int(math.ceil((mouse[0]-3)/60.)-1)
                 ypos = int(math.ceil((mouse[1]-3)/60.)-1)
-                if self.canmove(0, self.walls, xpos, ypos):
+                if self.canmove(self.players[0],(xpos,ypos), self.walls):
                     self.screen.blit(self.white, [xpos*60 + 14, ypos*60+14])
                     if pygame.mouse.get_pressed()[0]:
                         self.players[0]=(xpos,ypos)
@@ -138,12 +139,21 @@ class QuoridorGame():
                 elif self.selection == 2 and self.walls[y][x+1]!=2 and self.walls[y][x-1]!=2:
                     in_a_good_position = True
 
+        aux_board = [wall[:] for wall in self.walls]
+        aux_board[y][x] = self.selection
+        cancr = False
+        if self.cancross(0, aux_board) and self.cancross(1, aux_board):
+            cancr = True
         
-        return there_are_walls and in_a_good_position
+        return there_are_walls and in_a_good_position and cancr
 
-    def canmove(self, player, board, x, y):
-        x_p, y_p = self.players[player]
+    def canmove(self, pos_init, pos_end, board):
         canit = False
+        x_p, y_p = pos_init
+        x, y = pos_end
+        if (x<0 or x>8 or y<0 or y>8):
+            return False
+
         if x_p == x:
             if y == y_p + 1 and board[y_p][x] != 2 and board[y_p][x-1] != 2:
                 canit = True
@@ -157,14 +167,29 @@ class QuoridorGame():
         return canit
 
     def cancross(self, player, board):
-        canit = False
-        goal = set([[i,player*8] for i in range(9)])
-        reachable = set(self.players[player])
+        goal = set([(i,player*8) for i in range(9)])
+        old_reachable = set()
+        reachable = set([self.players[player]])
         finished = False
         while not finished:
+            old_reachable = old_reachable.union(reachable)
             new_reachable = set()
-            for place in rechable:
-                pass
+            for place in reachable:
+                p1 , p2 = place
+                for step in set([(p1,p2-1)
+                                    ,(p1,p2+1)
+                                    ,(p1-1,p2)
+                                    ,(p1+1,p2)])-old_reachable:
+                    if self.canmove(place, step, board):
+                        if step in goal:
+                            return True
+                        else:
+                            new_reachable.add(step)
+            if new_reachable:
+                reachable = new_reachable
+            else:
+                finished = True
+        return False
                 
     
 qg = QuoridorGame()
