@@ -17,7 +17,7 @@ class QuoridorGame():
         self.walls = [[0 for x in range(9)] for y in range(9)]
 
         # Position of the players
-        self.players = [(4,8),(4,0)]
+        self.players = [(4,8),(4,4)]
 
         # Number of walls remaining
         self.num_walls = 100
@@ -90,7 +90,7 @@ class QuoridorGame():
             if self.selection==0:
                 xpos = int(math.ceil((mouse[0]-3)/60.)-1)
                 ypos = int(math.ceil((mouse[1]-3)/60.)-1)
-                if self.canmove(self.players[0],(xpos,ypos), self.walls):
+                if self.can_player_move(0,(xpos,ypos)):
                     self.screen.blit(self.white, [xpos*60 + 14, ypos*60+14])
                     if pygame.mouse.get_pressed()[0]:
                         self.players[0]=(xpos,ypos)
@@ -165,6 +165,28 @@ class QuoridorGame():
             elif x==x_p-1 and board[y][x]!=1 and board[y-1][x] !=1:
                 canit = True
         return canit
+
+    def can_player_move(self, player, pos_end):
+        x_p, y_p = self.players[player]
+        x_o, y_o = self.players[(player+1)%2]
+        x_e, y_e = pos_end
+        # If the players are far appart, no problem
+        if abs(x_p-x_o) + abs(y_p+y_o)>1:
+            return self.canmove((x_p,y_p), pos_end, self.walls)
+        # Also if I want to move away from the other player
+        elif abs(x_e-x_o) + abs(y_e-y_o)>1:
+            return self.canmove((x_p,y_p), pos_end, self.walls)
+# NOT WORKING        # If we want to move toward the other player we can jump if it
+        # is possible
+        elif self.canmove((x_o,y_o),(x_o-abs(x_p-x_o),y_o -abs(y_p-y_o)), self.walls):
+            if pos_end == (2*x_o-x_p, 2*y_o - y_p):
+                return True
+            else:
+                return False
+        # If it is not possible to jump we can jump to the side
+        else:
+            self.canmove((x_o,y_o),pos_end, self.walls)
+            
 
     def cancross(self, player, board):
         goal = set([(i,player*8) for i in range(9)])
