@@ -17,7 +17,7 @@ class QuoridorGame():
         self.walls = [[0 for x in range(9)] for y in range(9)]
 
         # Position of the players
-        self.players = [(4,8),(4,4)]
+        self.players = [(4,8),(4,0)]
 
         # Number of walls remaining
         self.num_walls = 100
@@ -94,6 +94,8 @@ class QuoridorGame():
                     self.screen.blit(self.white, [xpos*60 + 14, ypos*60+14])
                     if pygame.mouse.get_pressed()[0]:
                         self.players[0]=(xpos,ypos)
+
+                        xo, yo = self.players[1]
             # If you want to put a vertical wall
             else:
                 xpos = int(math.ceil((mouse[0]-34)/60.)-1)
@@ -171,21 +173,20 @@ class QuoridorGame():
         x_o, y_o = self.players[(player+1)%2]
         x_e, y_e = pos_end
         # If the players are far appart, no problem
-        if abs(x_p-x_o) + abs(y_p+y_o)>1:
+        if abs(x_p-x_o) + abs(y_p-y_o)>1:
             return self.canmove((x_p,y_p), pos_end, self.walls)
         # Also if I want to move away from the other player
-        elif abs(x_e-x_o) + abs(y_e-y_o)>1:
+        elif abs(x_o-x_e) + abs(y_o-y_e)>1:
             return self.canmove((x_p,y_p), pos_end, self.walls)
-# NOT WORKING        # If we want to move toward the other player we can jump if it
-        # is possible
-        elif self.canmove((x_o,y_o),(x_o-abs(x_p-x_o),y_o -abs(y_p-y_o)), self.walls):
+        # If I want to get closer and can jump ahead
+        elif self.canmove((x_o,y_o),(2*x_o-x_p,2*y_o-y_p ), self.walls):
             if pos_end == (2*x_o-x_p, 2*y_o - y_p):
-                return True
+                return self.canmove((x_p,y_p),(x_o,y_o),self.walls)
             else:
                 return False
-        # If it is not possible to jump we can jump to the side
+#        # If it is not possible to jump we can jump to the side
         else:
-            self.canmove((x_o,y_o),pos_end, self.walls)
+            return self.canmove((x_o,y_o),pos_end, self.walls)
             
 
     def cancross(self, player, board):
