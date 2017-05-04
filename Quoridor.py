@@ -1,7 +1,9 @@
 import pygame
 import math
+from PodSixNet.Connection import ConnectionListener, connection
+from time import sleep
 
-class QuoridorGame():
+class QuoridorGame(ConnectionListener):
     def __init__(self):
         pygame.init()
         width, height = 848, 548
@@ -27,6 +29,8 @@ class QuoridorGame():
 
         # load the images
         self.initGraphics()
+
+        self.Connect()
 
     def drawBoard(self):
         # This is under construction
@@ -71,9 +75,12 @@ class QuoridorGame():
         self.wall_h = pygame.image.load('pared_h.png')
 
     def update(self):
+        connection.Pump()
+        self.Pump()
+
         # make the game 60 fps
         self.clock.tick(60)
-
+        
         # clear the screen
         self.screen.fill(0)
         self.drawBoard()
