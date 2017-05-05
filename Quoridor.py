@@ -180,7 +180,9 @@ class QuoridorGame(ConnectionListener):
         x_o, y_o = self.players[(player+1)%2]
         x_e, y_e = pos_end
         # If the players are far appart, no problem
-        if abs(x_p-x_o) + abs(y_p-y_o)>1:
+        if (x_p, y_p) == (x_e,y_e):
+            return False
+        elif abs(x_p-x_o) + abs(y_p-y_o)>1:
             return self.canmove((x_p,y_p), pos_end, self.walls)
         # Also if I want to move away from the other player
         elif abs(x_o-x_e) + abs(y_o-y_e)>1:
@@ -193,7 +195,7 @@ class QuoridorGame(ConnectionListener):
                 return False
 #        # If it is not possible to jump we can jump to the side
         else:
-            return self.canmove((x_o,y_o),pos_end, self.walls)
+            return (self.canmove((x_o,y_o),pos_end, self.walls) and self.canmove((x_p,y_p),(x_o,y_o),self.walls))
             
 
     def cancross(self, player, board):
