@@ -22,15 +22,44 @@ class QuoridorGame(ConnectionListener):
         self.players = [(4,8),(4,0)]
 
         # Number of walls remaining
-        self.num_walls = 100
+        self.num_walls = 10
 
-        # Option: 0 move, 1 place vertical wall, 2 place horizontal wall
-        self.selection = 0
+        # Option: 0 move, 1 place vertical wall, 2 place horizontal wall,
+        # -1 wait for other player
+        self.selection = -1
+
+        #Game Id
+        self.gameid = None
+        self.num = None
 
         # load the images
         self.initGraphics()
 
         self.Connect()
+
+        self.running = False
+        while not self.running:
+            self.Pump()
+            connection.Pump()
+            sleep(0.01)
+
+        if self.num==0:
+            self.selection = 0
+        else:
+            self.selection = -1
+
+    def Network_startgame(self, data):
+        self.running=True
+        self.num=data["player"]
+        self.gameid=data["gameid"]
+
+    def Network_move(self, data):
+        self.players[(self.num + 1)%2] = (data["x"], data["y"])
+        self.selection = 0
+
+    def Network_put_wall(self, data):
+        self.walls[data["y"]][data["x"]]=data["sel"]
+        self.selection = 0
 
     def drawBoard(self):
         # This is under construction
@@ -64,7 +93,8 @@ class QuoridorGame(ConnectionListener):
         self.screen.blit(v_wall, [611,140])
         self.screen.blit(h_wall, [600,220])
 
-        self.screen.blit(self.wall_h, [645, 80*self.selection + 85])
+        if self.selection >= 0:
+            self.screen.blit(self.wall_h, [645, 80*self.selection + 85])
     
 
     def initGraphics(self):
@@ -97,12 +127,14 @@ class QuoridorGame(ConnectionListener):
             if self.selection==0:
                 xpos = int(math.ceil((mouse[0]-3)/60.)-1)
                 ypos = int(math.ceil((mouse[1]-3)/60.)-1)
-                if self.can_player_move(0,(xpos,ypos)):
+                if self.can_player_move(self.num,(xpos,ypos)):
                     self.screen.blit(self.white, [xpos*60 + 14, ypos*60+14])
                     if pygame.mouse.get_pressed()[0]:
-                        self.players[0]=(xpos,ypos)
+                        self.players[self.num]=(xpos,ypos)
+                        self.Send({"action":"move", "x":xpos, "y":ypos, "gameid": self.gameid, "num":self.num})
+                        self.selection=-1
 
-                        xo, yo = self.players[1]
+#                        xo, yo = self.players[1]
             # If you want to put a vertical wall
             else:
                 xpos = int(math.ceil((mouse[0]-34)/60.)-1)
@@ -116,9 +148,11 @@ class QuoridorGame(ConnectionListener):
                     if pygame.mouse.get_pressed()[0]:
                         self.walls[ypos][xpos] = self.selection
                         self.num_walls= self.num_walls-1
+                        self.Send({"action":"put_wall", "sel":self.selection, "x":xpos, "y": ypos, "gameid": self.gameid, "num":self.num})
+                        self.selection=-1
 
         # If the mouse is on the menu
-        if pygame.mouse.get_pressed()[0] and mouse[0] > 550:
+        if pygame.mouse.get_pressed()[0] and mouse[0] > 550 and self.selection>=0:
             if mouse[1] > 20 and mouse[1]< 120:
                 self.selection=0
             elif mouse[1] > 125 and mouse[1] < 200:
